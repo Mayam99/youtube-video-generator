@@ -1,12 +1,13 @@
 import os
 import re
+import numpy as np
 import streamlit as st
 from gtts import gTTS
+from PIL import Image, ImageDraw, ImageFont
 from moviepy.editor import (
-    TextClip,
     AudioFileClip,
     CompositeVideoClip,
-    ColorClip,
+    ImageClip,
 )
 
 # Page Configuration
@@ -29,7 +30,58 @@ with col1:
 with col2:
     text_color = st.color_picker("Text Color", "#F2AA4C")
 with col3:
-    font_size = st.slider("Text Size", 30, 80, 50)
+    font_size = st.slider("Text Size", 20, 80, 40)
+
+# Helper function to generate text frame using PIL (Bypasses ImageMagick)
+def create_text_image(text, size, font_size, text_color_hex, bg_color_hex):
+    width, height = size
+    
+    # Create image with background color
+    img = Image.new("RGB", (width, height), bg_color_hex)
+    draw = ImageDraw.Draw(img)
+    
+    # Load font (fallback gracefully if custom font isn't found)
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", font_size)
+    except:
+        try:
+            font = ImageFont.truetype("Arial.ttf", font_size)
+        except:
+            font = ImageFont.load_default()
+
+    # Word wrapping helper
+    margin = 100
+    max_width = width - (2 * margin)
+    
+    words = text.split()
+    lines = []
+    current_line = []
+    
+    for word in words:
+        test_line = " ".join(current_line + [word])
+        # Use textbbox for text sizing
+        bbox = draw.textbbox((0, 0), test_line, font=font)
+        w = bbox[2] - bbox[0]
+        if w <= max_width:
+            current_line.append(word)
+        else:
+            lines.append(" ".join(current_line))
+            current_line = [word]
+    lines.append(" ".join(current_line))
+    
+    wrapped_text = "\n".join(lines)
+    
+    # Draw centered text
+    draw.multiline_text(
+        (width / 2, height / 2),
+        wrapped_text,
+        fill=text_color_hex,
+        font=font,
+        anchor="mm",
+        align="center"
+    )
+    
+    return np.array(img)
 
 # Generate Button
 if st.button("🚀 Generate Video"):
@@ -40,46 +92,42 @@ if st.button("🚀 Generate Video"):
             os.makedirs("output", exist_ok=True)
             audio_path = "output/temp_audio.mp3"
             
-            # Generate Audio via gTTS (Free Google Text-to-Speech)
+            # Generate Audio via gTTS
             tts = gTTS(text=script_text, lang='en', slow=False)
             tts.save(audio_path)
             
             audio_clip = AudioFileClip(audio_path)
             video_duration = audio_clip.duration
 
-        with st.spinner("2/3 Synthesizing animated elements & background..."):
-            # Create Background Clip (1080x1920 for Shorts or 1920x1080 for Widescreen)
-            # Standard Widescreen YouTube resolution: (1920, 1080)
+        with st.spinner("2/3 Synthesizing animated frames..."):
             width, height = 1920, 1080
-            bg_clip = ColorClip(size=(width, height), color=tuple(int(bg_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4)), duration=video_duration)
-
+            
             # Clean sentences into subtitle chunks
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             chunk_duration = video_duration / max(len(sentences), 1)
 
-            text_clips = []
+            video_clips = []
             for i, sentence in enumerate(sentences):
-                # Create animated text overlay per sentence
-                txt_clip = (
-                    TextClip(
-                        sentence,
-                        fontsize=font_size,
-                        color=text_color,
-                        font="Arial",
-                        size=(width - 200, None),
-                        method="caption"
-                    )
-                    .set_position("center")
+                # Create PIL image frame for this sentence
+                frame_np = create_text_image(
+                    text=sentence,
+                    size=(width, height),
+                    font_size=font_size,
+                    text_color_hex=text_color,
+                    bg_color_hex=bg_color
+                )
+                
+                # Convert frame to MoviePy ImageClip
+                img_clip = (
+                    ImageClip(frame_np)
                     .set_start(i * chunk_duration)
                     .set_duration(chunk_duration)
                 )
-                text_clips.append(txt_clip)
+                video_clips.append(img_clip)
 
-        with st.spinner("3/3 Rendering final video on CPU..."):
+        with st.spinner("3/3 Rendering final video..."):
             # Composite Video + Audio
-            final_clip = CompositeVideoClip([bg_clip] + text_clips)
-            final_clip = final_clip.set_audio(audio_clip)
-
+            final_clip = CompositeVideoClip(video_clips).set_audio(audio_clip)
             output_file = f"output/{video_title}.mp4"
             
             # Render video via CPU using FFmpeg
