@@ -8,12 +8,14 @@ from moviepy.editor import (
     AudioFileClip,
     CompositeVideoClip,
     ImageClip,
+    CompositeAudioClip,
 )
+from moviepy.audio.fx.all import audio_loop
 
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Step 2: Enhanced with visual border frames, title banners, and cartoon styling!")
+st.write("Step 3: Enhanced with Background Music (BGM) mixing!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -47,11 +49,16 @@ else:
 
 font_size = st.slider("Text Size", 20, 100, 50)
 
+# Optional Background Music Upload
+st.subheader("🎵 Audio Settings")
+bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", type=["mp3", "wav"])
+bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
+
 # Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_Step2")
+video_title = st.text_input("Project Name", "Cartoon_Story_Step3")
 script_text = st.text_area(
     "Enter Script / Educational Story",
-    "Welcome little learners! Today we are exploring fun shapes, colors, and counting numbers from one to five.",
+    "Welcome little learners! Today we are exploring fun shapes, colors, and counting numbers from one to five with background music.",
     height=150,
 )
 
@@ -61,7 +68,6 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     img = Image.new("RGB", (w_img, h_img), bg_color_hex)
     draw = ImageDraw.Draw(img)
     
-    # 1. Draw a cute decorative border frame
     border_width = 30
     draw.rectangle(
         [border_width, border_width, w_img - border_width, h_img - border_width],
@@ -69,7 +75,6 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
         width=12
     )
     
-    # 2. Draw a top header banner for educational/cartoon style
     banner_height = int(h_img * 0.10)
     draw.rectangle(
         [border_width, border_width, w_img - border_width, border_width + banner_height],
@@ -87,7 +92,6 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
             font = ImageFont.load_default()
             header_font = ImageFont.load_default()
 
-    # Draw header title text inside the banner
     draw.text(
         (w_img / 2, border_width + (banner_height / 2)),
         "📚 " + video_title_text.upper(),
@@ -97,7 +101,6 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
         align="center"
     )
 
-    # 3. Word wrapping helper for main text content
     margin = 120
     max_w = w_img - (2 * margin)
     
@@ -118,7 +121,6 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     
     wrapped_text = "\n".join(lines)
     
-    # 4. Draw centered main text in the body area below the banner
     body_top = border_width + banner_height
     body_center_y = body_top + ((h_img - body_top - border_width) / 2)
     
@@ -134,21 +136,38 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Step 2 Video"):
+if st.button("🚀 Generate Step 3 Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
-        with st.spinner("1/3 Generating voiceover audio..."):
+        with st.spinner("1/3 Generating voiceover and audio tracks..."):
             os.makedirs("output", exist_ok=True)
             audio_path = "output/temp_audio.mp3"
             
             tts = gTTS(text=script_text, lang='en', slow=False)
             tts.save(audio_path)
             
-            audio_clip = AudioFileClip(audio_path)
-            video_duration = audio_clip.duration
+            voice_clip = AudioFileClip(audio_path)
+            video_duration = voice_clip.duration
 
-        with st.spinner("2/3 Synthesizing animated frames with borders and banners..."):
+            # Handle background music mixing if provided
+            if bg_music_file is not None:
+                bg_music_path = "output/temp_bgm.mp3"
+                with open(bg_music_path, "wb") as f:
+                    f.write(bg_music_file.getbuffer())
+                
+                bg_clip = AudioFileClip(bg_music_path)
+                if bg_clip.duration < video_duration:
+                    bg_clip = audio_loop(bg_clip, duration=video_duration)
+                else:
+                    bg_clip = bg_clip.subclip(0, video_duration)
+                
+                bg_clip = bg_clip.volumex(bg_music_volume)
+                final_audio = CompositeAudioClip([voice_clip, bg_clip])
+            else:
+                final_audio = voice_clip
+
+        with st.spinner("2/3 Synthesizing animated frames..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             chunk_duration = video_duration / max(len(sentences), 1)
 
@@ -171,8 +190,8 @@ if st.button("🚀 Generate Step 2 Video"):
                 )
                 video_clips.append(img_clip)
 
-        with st.spinner("3/3 Rendering final video..."):
-            final_clip = CompositeVideoClip(video_clips).set_audio(audio_clip)
+        with st.spinner("3/3 Rendering final video with mixed audio..."):
+            final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
             final_clip.write_videofile(
@@ -184,7 +203,7 @@ if st.button("🚀 Generate Step 2 Video"):
                 logger=None
             )
 
-        st.success("🎉 Enhanced cartoon video rendered successfully!")
+        st.success("🎉 Video with background music rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
