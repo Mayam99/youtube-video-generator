@@ -13,7 +13,7 @@ from moviepy.editor import (
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Generate educational and fun animated videos seamlessly from your phone or PC!")
+st.write("Step 2: Enhanced with visual border frames, title banners, and cartoon styling!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -33,41 +33,72 @@ theme = st.selectbox(
 )
 
 if theme == "Bright Kids Fun (Bright Blue & Yellow)":
-    bg_color, text_color = "#1E90FF", "#FFFF00"
+    bg_color, text_color, accent_color = "#1E90FF", "#FFFF00", "#FF4500"
 elif theme == "Educational Dark (Slate & Gold)":
-    bg_color, text_color = "#101820", "#F2AA4C"
+    bg_color, text_color, accent_color = "#101820", "#F2AA4C", "#4EA8DE"
 else:
-    col_a, col_b = st.columns(2)
+    col_a, col_b, col_c = st.columns(3)
     with col_a:
         bg_color = st.color_picker("Background Color", "#101820")
     with col_b:
         text_color = st.color_picker("Text Color", "#F2AA4C")
+    with col_c:
+        accent_color = st.color_picker("Accent Color", "#FF4500")
 
 font_size = st.slider("Text Size", 20, 100, 50)
 
 # Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_1")
+video_title = st.text_input("Project Name", "Cartoon_Story_Step2")
 script_text = st.text_area(
     "Enter Script / Educational Story",
-    "Welcome little learners! Today we are exploring numbers and counting from one to five.",
+    "Welcome little learners! Today we are exploring fun shapes, colors, and counting numbers from one to five.",
     height=150,
 )
 
-# Helper function to generate text frame using PIL
-def create_text_image(text, size, font_size, text_color_hex, bg_color_hex):
+# Helper function to generate enhanced visual frames with borders and banners
+def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accent_color_hex, video_title_text):
     w_img, h_img = size
     img = Image.new("RGB", (w_img, h_img), bg_color_hex)
     draw = ImageDraw.Draw(img)
     
+    # 1. Draw a cute decorative border frame
+    border_width = 30
+    draw.rectangle(
+        [border_width, border_width, w_img - border_width, h_img - border_width],
+        outline=accent_color_hex,
+        width=12
+    )
+    
+    # 2. Draw a top header banner for educational/cartoon style
+    banner_height = int(h_img * 0.10)
+    draw.rectangle(
+        [border_width, border_width, w_img - border_width, border_width + banner_height],
+        fill=accent_color_hex
+    )
+    
     try:
         font = ImageFont.truetype("DejaVuSans.ttf", font_size)
+        header_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 0.65))
     except:
         try:
             font = ImageFont.truetype("Arial.ttf", font_size)
+            header_font = ImageFont.truetype("Arial.ttf", int(font_size * 0.65))
         except:
             font = ImageFont.load_default()
+            header_font = ImageFont.load_default()
 
-    margin = 80
+    # Draw header title text inside the banner
+    draw.text(
+        (w_img / 2, border_width + (banner_height / 2)),
+        "📚 " + video_title_text.upper(),
+        fill="#FFFFFF",
+        font=header_font,
+        anchor="mm",
+        align="center"
+    )
+
+    # 3. Word wrapping helper for main text content
+    margin = 120
     max_w = w_img - (2 * margin)
     
     words = text.split()
@@ -87,8 +118,12 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex):
     
     wrapped_text = "\n".join(lines)
     
+    # 4. Draw centered main text in the body area below the banner
+    body_top = border_width + banner_height
+    body_center_y = body_top + ((h_img - body_top - border_width) / 2)
+    
     draw.multiline_text(
-        (w_img / 2, h_img / 2),
+        (w_img / 2, body_center_y),
         wrapped_text,
         fill=text_color_hex,
         font=font,
@@ -99,7 +134,7 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex):
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Cartoon Video"):
+if st.button("🚀 Generate Step 2 Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
@@ -113,7 +148,7 @@ if st.button("🚀 Generate Cartoon Video"):
             audio_clip = AudioFileClip(audio_path)
             video_duration = audio_clip.duration
 
-        with st.spinner("2/3 Synthesizing animated frames..."):
+        with st.spinner("2/3 Synthesizing animated frames with borders and banners..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             chunk_duration = video_duration / max(len(sentences), 1)
 
@@ -124,7 +159,9 @@ if st.button("🚀 Generate Cartoon Video"):
                     size=(width, height),
                     font_size=font_size,
                     text_color_hex=text_color,
-                    bg_color_hex=bg_color
+                    bg_color_hex=bg_color,
+                    accent_color_hex=accent_color,
+                    video_title_text=video_title
                 )
                 
                 img_clip = (
@@ -147,7 +184,7 @@ if st.button("🚀 Generate Cartoon Video"):
                 logger=None
             )
 
-        st.success("🎉 Cartoon video rendered successfully!")
+        st.success("🎉 Enhanced cartoon video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
