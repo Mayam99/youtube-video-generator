@@ -15,7 +15,7 @@ from moviepy.audio.fx.all import audio_loop
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Step 3: Enhanced with Background Music (BGM) mixing!")
+st.write("Step 4: Enhanced with Automated Multi-Scene Color Shifting!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -31,11 +31,14 @@ else:
 # Preset Themes for Kids vs Adults
 theme = st.selectbox(
     "Choose Theme Style", 
-    ["Bright Kids Fun (Bright Blue & Yellow)", "Educational Dark (Slate & Gold)", "Custom Colors"]
+    ["Bright Kids Fun (Multi-Color Cycling)", "Educational Dark (Slate & Gold)", "Custom Colors"]
 )
 
-if theme == "Bright Kids Fun (Bright Blue & Yellow)":
-    bg_color, text_color, accent_color = "#1E90FF", "#FFFF00", "#FF4500"
+# Vibrant Cartoon Palette for multi-scene shifting
+CARTOON_PALETTE = ["#1E90FF", "#FFD700", "#32CD32", "#FF69B4", "#9370DB", "#FFA500", "#00CED1"]
+
+if theme == "Bright Kids Fun (Multi-Color Cycling)":
+    text_color, accent_color = "#FFFFFF", "#101820"
 elif theme == "Educational Dark (Slate & Gold)":
     bg_color, text_color, accent_color = "#101820", "#F2AA4C", "#4EA8DE"
 else:
@@ -55,10 +58,10 @@ bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", t
 bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
 
 # Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_Step3")
+video_title = st.text_input("Project Name", "Cartoon_Story_Step4")
 script_text = st.text_area(
     "Enter Script / Educational Story",
-    "Welcome little learners! Today we are exploring fun shapes, colors, and counting numbers from one to five with background music.",
+    "Welcome little learners! Today we are exploring fun shapes, vibrant colors, and counting numbers from one to five. Watch how the background changes with every sentence!",
     height=150,
 )
 
@@ -136,7 +139,7 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Step 3 Video"):
+if st.button("🚀 Generate Step 4 Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
@@ -150,7 +153,6 @@ if st.button("🚀 Generate Step 3 Video"):
             voice_clip = AudioFileClip(audio_path)
             video_duration = voice_clip.duration
 
-            # Handle background music mixing if provided
             if bg_music_file is not None:
                 bg_music_path = "output/temp_bgm.mp3"
                 with open(bg_music_path, "wb") as f:
@@ -167,18 +169,24 @@ if st.button("🚀 Generate Step 3 Video"):
             else:
                 final_audio = voice_clip
 
-        with st.spinner("2/3 Synthesizing animated frames..."):
+        with st.spinner("2/3 Synthesizing multi-scene color shifting frames..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             chunk_duration = video_duration / max(len(sentences), 1)
 
             video_clips = []
             for i, sentence in enumerate(sentences):
+                # Automatically pick a different background color for each sentence if using Kids theme
+                if theme == "Bright Kids Fun (Multi-Color Cycling)":
+                    current_bg = CARTOON_PALETTE[i % len(CARTOON_PALETTE)]
+                else:
+                    current_bg = bg_color
+
                 frame_np = create_text_image(
                     text=sentence,
                     size=(width, height),
                     font_size=font_size,
                     text_color_hex=text_color,
-                    bg_color_hex=bg_color,
+                    bg_color_hex=current_bg,
                     accent_color_hex=accent_color,
                     video_title_text=video_title
                 )
@@ -190,7 +198,7 @@ if st.button("🚀 Generate Step 3 Video"):
                 )
                 video_clips.append(img_clip)
 
-        with st.spinner("3/3 Rendering final video with mixed audio..."):
+        with st.spinner("3/3 Rendering final video with dynamic scenes..."):
             final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
@@ -203,7 +211,7 @@ if st.button("🚀 Generate Step 3 Video"):
                 logger=None
             )
 
-        st.success("🎉 Video with background music rendered successfully!")
+        st.success("🎉 Multi-scene cartoon video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
