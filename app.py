@@ -15,7 +15,7 @@ from moviepy.audio.fx.all import audio_loop
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Optimized with Perfect Audio-Text Synchronization & Clean Badges!")
+st.write("Fully Synchronized, Clean, and Optimized Cartoon Generator!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -57,14 +57,14 @@ bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", t
 bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
 
 # Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_Sync")
+video_title = st.text_input("Project Name", "Cartoon_Story_Pro")
 script_text = st.text_area(
     "Enter Script / Educational Story",
     "Welcome little learners! Today we are exploring numbers, counting stars, discovering cute animals, reading books, and learning bright colors together!",
     height=150,
 )
 
-# Clean Text Badges (No raw emojis to prevent rendering errors)
+# Clean Text Badges (Guaranteed crisp rendering with zero square boxes)
 KEYWORD_BADGES = {
     "number": "[COUNTING TIME]", "count": "[COUNTING TIME]", "one": "[NUMBER ONE]", 
     "two": "[NUMBER TWO]", "three": "[NUMBER THREE]", "star": "[SHINING STARS]", 
@@ -80,9 +80,9 @@ def get_badge_for_text(text):
     for keyword, badge in KEYWORD_BADGES.items():
         if keyword in text_lower:
             return badge
-    return "[LEARNING FUN]"  # Default educational badge
+    return "[LEARNING ZONE]"  # Default educational badge
 
-# Helper function to generate frames with borders, banners, and text badges
+# Helper function to generate frames with borders, clean banners, and badges
 def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accent_color_hex, video_title_text):
     w_img, h_img = size
     img = Image.new("RGB", (w_img, h_img), bg_color_hex)
@@ -115,9 +115,10 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
             header_font = ImageFont.load_default()
             badge_font = ImageFont.load_default()
 
+    # Draw clean header title (No emojis to prevent square box rendering bugs)
     draw.text(
         (w_img / 2, border_width + (banner_height / 2)),
-        "📚 " + video_title_text.upper(),
+        video_title_text.upper(),
         fill="#FFFFFF",
         font=header_font,
         anchor="mm",
@@ -172,7 +173,7 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Synchronized Video"):
+if st.button("🚀 Generate Professional Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
@@ -202,10 +203,9 @@ if st.button("🚀 Generate Synchronized Video"):
             else:
                 final_audio = voice_clip
 
-        with st.spinner("2/3 Synthesizing perfectly synchronized frames..."):
+        with st.spinner("2/3 Synthesizing synchronized frames with clean badges..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             
-            # Calculate total words to proportion sentence durations accurately
             total_words = sum(len(s.split()) for s in sentences)
             if total_words == 0:
                 total_words = 1
@@ -214,10 +214,9 @@ if st.button("🚀 Generate Synchronized Video"):
             current_time = 0.0
             
             for i, sentence in enumerate(sentences):
-                # Proportional duration based on sentence length (word count)
                 sentence_words = len(sentence.split())
                 chunk_duration = (sentence_words / total_words) * video_duration
-                if chunk_duration < 0.6:  # Minimum safety duration
+                if chunk_duration < 0.6:
                     chunk_duration = 0.6
 
                 if theme == "Bright Kids Fun (Multi-Color Cycling)":
@@ -243,7 +242,7 @@ if st.button("🚀 Generate Synchronized Video"):
                 video_clips.append(img_clip)
                 current_time += chunk_duration
 
-        with st.spinner("3/3 Rendering final video with perfect sync..."):
+        with st.spinner("3/3 Rendering final professional video..."):
             final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
@@ -256,7 +255,7 @@ if st.button("🚀 Generate Synchronized Video"):
                 logger=None
             )
 
-        st.success("🎉 Perfectly synchronized video rendered successfully!")
+        st.success("🎉 Professional cartoon video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
