@@ -16,7 +16,7 @@ from moviepy.audio.fx.all import audio_loop
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Step 7: Enhanced with Quick Educational Script Templates!")
+st.write("Step 8: Enhanced with Custom Background Image Uploads!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -29,15 +29,19 @@ if "9:16" in format_choice:
 else:
     width, height = 1920, 1080
 
-# Preset Themes for Kids vs Adults
+# Preset Themes or Custom Background Image
 theme = st.selectbox(
     "Choose Theme Style", 
-    ["Bright Kids Fun (Multi-Color Cycling)", "Educational Dark (Slate & Gold)", "Custom Colors"]
+    ["Bright Kids Fun (Multi-Color Cycling)", "Educational Dark (Slate & Gold)", "Custom Background Image", "Custom Colors"]
 )
 
 CARTOON_PALETTE = ["#1E90FF", "#FFD700", "#32CD32", "#FF69B4", "#9370DB", "#FFA500", "#00CED1"]
 
-if theme == "Bright Kids Fun (Multi-Color Cycling)":
+bg_image_file = None
+if theme == "Custom Background Image":
+    bg_image_file = st.file_uploader("Upload Custom Background Image (JPG/PNG)", type=["jpg", "jpeg", "png"])
+    text_color, accent_color = "#FFFFFF", "#101820"
+elif theme == "Bright Kids Fun (Multi-Color Cycling)":
     text_color, accent_color = "#FFFFFF", "#101820"
 elif theme == "Educational Dark (Slate & Gold)":
     bg_color, text_color, accent_color = "#101820", "#F2AA4C", "#4EA8DE"
@@ -65,7 +69,7 @@ st.subheader("🎵 Audio Settings")
 bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", type=["mp3", "wav"])
 bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
 
-# Script Templates (Step 7 Addition)
+# Script Templates
 st.subheader("📝 Script & Content")
 script_template = st.selectbox(
     "Choose a Quick Script Template", 
@@ -86,7 +90,7 @@ default_scripts = {
 
 selected_default_text = default_scripts.get(script_template, default_scripts["Custom Script (Type Your Own)"])
 
-video_title = st.text_input("Project Name", "Cartoon_Story_Templates")
+video_title = st.text_input("Project Name", "Cartoon_Story_ImageBg")
 script_text = st.text_area(
     "Enter Script / Educational Story",
     value=selected_default_text,
@@ -124,10 +128,15 @@ def draw_cartoon_graphic(draw, text, center, accent_hex):
         draw.ellipse([cx - 70, cy - 70, cx + 70, cy + 70], fill="#FFFFFF", outline=accent_hex, width=6)
         draw.ellipse([cx - 30, cy - 30, cx + 30, cy + 30], fill=accent_hex)
 
-# Helper function to generate frames
-def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accent_color_hex, video_title_text):
+# Helper function to generate frames with custom background support
+def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accent_color_hex, video_title_text, custom_bg_img=None):
     w_img, h_img = size
-    img = Image.new("RGB", (w_img, h_img), bg_color_hex)
+    
+    if custom_bg_img:
+        img = custom_bg_img.resize((w_img, h_img), Image.Resampling.LANCZOS)
+    else:
+        img = Image.new("RGB", (w_img, h_img), bg_color_hex)
+        
     draw = ImageDraw.Draw(img)
     
     border_width = 30
@@ -202,11 +211,11 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Template Video"):
+if st.button("🚀 Generate Custom Background Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
-        with st.spinner("1/3 Generating voiceover and audio..."):
+        with st.spinner("1/3 Processing voiceover and background image..."):
             os.makedirs("output", exist_ok=True)
             audio_path = "output/temp_audio.mp3"
             
@@ -226,6 +235,10 @@ if st.button("🚀 Generate Template Video"):
             voice_clip = AudioFileClip(audio_path)
             video_duration = voice_clip.duration
 
+            loaded_bg_img = None
+            if bg_image_file is not None:
+                loaded_bg_img = Image.open(bg_image_file).convert("RGB")
+
             if bg_music_file is not None:
                 bg_music_path = "output/temp_bgm.mp3"
                 with open(bg_music_path, "wb") as f:
@@ -242,7 +255,7 @@ if st.button("🚀 Generate Template Video"):
             else:
                 final_audio = voice_clip
 
-        with st.spinner("2/3 Synthesizing frames with templates..."):
+        with st.spinner("2/3 Synthesizing frames with custom backdrop..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             
             total_words = sum(len(s.split()) for s in sentences)
@@ -270,7 +283,8 @@ if st.button("🚀 Generate Template Video"):
                     text_color_hex=text_color,
                     bg_color_hex=current_bg,
                     accent_color_hex=accent_color,
-                    video_title_text=video_title
+                    video_title_text=video_title,
+                    custom_bg_img=loaded_bg_img
                 )
                 
                 img_clip = (
@@ -281,7 +295,7 @@ if st.button("🚀 Generate Template Video"):
                 video_clips.append(img_clip)
                 current_time += chunk_duration
 
-        with st.spinner("3/3 Rendering final template video..."):
+        with st.spinner("3/3 Rendering final custom background video..."):
             final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
@@ -294,7 +308,7 @@ if st.button("🚀 Generate Template Video"):
                 logger=None
             )
 
-        st.success("🎉 Template-based cartoon video rendered successfully!")
+        st.success("🎉 Custom background video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
