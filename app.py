@@ -15,7 +15,7 @@ from moviepy.audio.fx.all import audio_loop
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Step 5: Enhanced with Automated Cartoon Emojis & Dynamic Stickers!")
+st.write("Enhanced with Educational Icon Badges & Dynamic Colors!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -57,29 +57,32 @@ bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", t
 bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
 
 # Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_Step5")
+video_title = st.text_input("Project Name", "Cartoon_Story_Badges")
 script_text = st.text_area(
     "Enter Script / Educational Story",
     "Welcome little learners! Today we are exploring numbers, counting stars, discovering cute animals, reading books, and learning bright colors together!",
     height=150,
 )
 
-# Keyword-to-Emoji mapping for automated sticker generation
-KEYWORD_EMOJIS = {
-    "number": "🔢", "count": "🔢", "one": "1️⃣", "two": "2️⃣", "three": "3️⃣",
-    "star": "⭐", "shape": "🔶", "color": "🎨", "animal": "🐶", "dog": "🐶",
-    "cat": "🐱", "book": "📚", "learn": "🎓", "explore": "🚀", "welcome": "👋",
-    "happy": "😊", "fun": "🎉", "play": "🧸", "tree": "🌳", "sun": "☀️"
+# Keyword-to-Badge mapping for clean educational stickers
+KEYWORD_BADGES = {
+    "number": "[🔢 COUNTING TIME]", "count": "[🔢 COUNTING TIME]", "one": "[1️⃣ NUMBER ONE]", 
+    "two": "[2️⃣ NUMBER TWO]", "three": "[3️⃣ NUMBER THREE]", "star": "[⭐ SHINING STARS]", 
+    "shape": "[🔶 FUN SHAPES]", "color": "[🎨 BRIGHT COLORS]", "animal": "[🐶 CUTE ANIMALS]", 
+    "dog": "[🐶 PUPPY TIME]", "cat": "[🐱 KITTY TIME]", "book": "[📚 STORY TIME]", 
+    "learn": "[🎓 LEARNING ZONE]", "explore": "[🚀 ADVENTURE TIME]", "welcome": "[👋 HELLO FRIENDS]", 
+    "happy": "[😊 HAPPY DAY]", "fun": "[🎉 FUN & GAMES]", "play": "[🧸 PLAYTIME]", 
+    "tree": "[🌳 NATURE TIME]", "sun": "[☀️ SUNNY DAY]"
 }
 
-def get_emoji_for_text(text):
+def get_badge_for_text(text):
     text_lower = text.lower()
-    for keyword, emoji in KEYWORD_EMOJIS.items():
+    for keyword, badge in KEYWORD_BADGES.items():
         if keyword in text_lower:
-            return emoji
-    return "⭐"  # Default kid-friendly sticker
+            return badge
+    return "[⭐ LEARNING FUN]"  # Default educational badge
 
-# Helper function to generate frames with borders, banners, and emoji stickers
+# Helper function to generate frames with borders, banners, and text badges
 def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accent_color_hex, video_title_text):
     w_img, h_img = size
     img = Image.new("RGB", (w_img, h_img), bg_color_hex)
@@ -101,16 +104,16 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     try:
         font = ImageFont.truetype("DejaVuSans.ttf", font_size)
         header_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 0.65))
-        emoji_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 1.5))
+        badge_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 0.75))
     except:
         try:
             font = ImageFont.truetype("Arial.ttf", font_size)
             header_font = ImageFont.truetype("Arial.ttf", int(font_size * 0.65))
-            emoji_font = ImageFont.truetype("Arial.ttf", int(font_size * 1.5))
+            badge_font = ImageFont.truetype("Arial.ttf", int(font_size * 0.75))
         except:
             font = ImageFont.load_default()
             header_font = ImageFont.load_default()
-            emoji_font = ImageFont.load_default()
+            badge_font = ImageFont.load_default()
 
     draw.text(
         (w_img / 2, border_width + (banner_height / 2)),
@@ -121,16 +124,17 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
         align="center"
     )
 
-    # Determine and draw automated emoji sticker above the text
-    matched_emoji = get_emoji_for_text(text)
+    # Determine and draw educational badge above the main text
+    matched_badge = get_badge_for_text(text)
     body_top = border_width + banner_height
     body_center_y = body_top + ((h_img - body_top - border_width) / 2)
     
-    emoji_y = body_center_y - int(font_size * 2.2)
+    badge_y = body_center_y - int(font_size * 2.2)
     draw.text(
-        (w_img / 2, emoji_y),
-        matched_emoji,
-        font=emoji_font,
+        (w_img / 2, badge_y),
+        matched_badge,
+        fill=accent_color_hex,
+        font=badge_font,
         anchor="mm",
         align="center"
     )
@@ -155,7 +159,7 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     
     wrapped_text = "\n".join(lines)
     
-    text_y = body_center_y + int(font_size * 0.8)
+    text_y = body_center_y + int(font_size * 0.5)
     draw.multiline_text(
         (w_img / 2, text_y),
         wrapped_text,
@@ -168,7 +172,7 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Step 5 Video"):
+if st.button("🚀 Generate Video with Badges"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
@@ -198,7 +202,7 @@ if st.button("🚀 Generate Step 5 Video"):
             else:
                 final_audio = voice_clip
 
-        with st.spinner("2/3 Synthesizing animated frames with emojis and shifting colors..."):
+        with st.spinner("2/3 Synthesizing animated frames with badges and shifting colors..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             chunk_duration = video_duration / max(len(sentences), 1)
 
@@ -226,7 +230,7 @@ if st.button("🚀 Generate Step 5 Video"):
                 )
                 video_clips.append(img_clip)
 
-        with st.spinner("3/3 Rendering final video with stickers and music..."):
+        with st.spinner("3/3 Rendering final video with badges and music..."):
             final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
@@ -239,7 +243,7 @@ if st.button("🚀 Generate Step 5 Video"):
                 logger=None
             )
 
-        st.success("🎉 Emoji-enhanced cartoon video rendered successfully!")
+        st.success("🎉 Badge-enhanced cartoon video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
