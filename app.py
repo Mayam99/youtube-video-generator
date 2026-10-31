@@ -15,7 +15,7 @@ from moviepy.audio.fx.all import audio_loop
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Enhanced with Educational Icon Badges & Dynamic Colors!")
+st.write("Optimized with Perfect Audio-Text Synchronization & Clean Badges!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -57,22 +57,22 @@ bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", t
 bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
 
 # Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_Badges")
+video_title = st.text_input("Project Name", "Cartoon_Story_Sync")
 script_text = st.text_area(
     "Enter Script / Educational Story",
     "Welcome little learners! Today we are exploring numbers, counting stars, discovering cute animals, reading books, and learning bright colors together!",
     height=150,
 )
 
-# Keyword-to-Badge mapping for clean educational stickers
+# Clean Text Badges (No raw emojis to prevent rendering errors)
 KEYWORD_BADGES = {
-    "number": "[🔢 COUNTING TIME]", "count": "[🔢 COUNTING TIME]", "one": "[1️⃣ NUMBER ONE]", 
-    "two": "[2️⃣ NUMBER TWO]", "three": "[3️⃣ NUMBER THREE]", "star": "[⭐ SHINING STARS]", 
-    "shape": "[🔶 FUN SHAPES]", "color": "[🎨 BRIGHT COLORS]", "animal": "[🐶 CUTE ANIMALS]", 
-    "dog": "[🐶 PUPPY TIME]", "cat": "[🐱 KITTY TIME]", "book": "[📚 STORY TIME]", 
-    "learn": "[🎓 LEARNING ZONE]", "explore": "[🚀 ADVENTURE TIME]", "welcome": "[👋 HELLO FRIENDS]", 
-    "happy": "[😊 HAPPY DAY]", "fun": "[🎉 FUN & GAMES]", "play": "[🧸 PLAYTIME]", 
-    "tree": "[🌳 NATURE TIME]", "sun": "[☀️ SUNNY DAY]"
+    "number": "[COUNTING TIME]", "count": "[COUNTING TIME]", "one": "[NUMBER ONE]", 
+    "two": "[NUMBER TWO]", "three": "[NUMBER THREE]", "star": "[SHINING STARS]", 
+    "shape": "[FUN SHAPES]", "color": "[BRIGHT COLORS]", "animal": "[CUTE ANIMALS]", 
+    "dog": "[PUPPY TIME]", "cat": "[KITTY TIME]", "book": "[STORY TIME]", 
+    "learn": "[LEARNING ZONE]", "explore": "[ADVENTURE TIME]", "welcome": "[HELLO FRIENDS]", 
+    "happy": "[HAPPY DAY]", "fun": "[FUN & GAMES]", "play": "[PLAYTIME]", 
+    "tree": "[NATURE TIME]", "sun": "[SUNNY DAY]"
 }
 
 def get_badge_for_text(text):
@@ -80,7 +80,7 @@ def get_badge_for_text(text):
     for keyword, badge in KEYWORD_BADGES.items():
         if keyword in text_lower:
             return badge
-    return "[⭐ LEARNING FUN]"  # Default educational badge
+    return "[LEARNING FUN]"  # Default educational badge
 
 # Helper function to generate frames with borders, banners, and text badges
 def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accent_color_hex, video_title_text):
@@ -172,7 +172,7 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Video with Badges"):
+if st.button("🚀 Generate Synchronized Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
@@ -202,12 +202,24 @@ if st.button("🚀 Generate Video with Badges"):
             else:
                 final_audio = voice_clip
 
-        with st.spinner("2/3 Synthesizing animated frames with badges and shifting colors..."):
+        with st.spinner("2/3 Synthesizing perfectly synchronized frames..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
-            chunk_duration = video_duration / max(len(sentences), 1)
+            
+            # Calculate total words to proportion sentence durations accurately
+            total_words = sum(len(s.split()) for s in sentences)
+            if total_words == 0:
+                total_words = 1
 
             video_clips = []
+            current_time = 0.0
+            
             for i, sentence in enumerate(sentences):
+                # Proportional duration based on sentence length (word count)
+                sentence_words = len(sentence.split())
+                chunk_duration = (sentence_words / total_words) * video_duration
+                if chunk_duration < 0.6:  # Minimum safety duration
+                    chunk_duration = 0.6
+
                 if theme == "Bright Kids Fun (Multi-Color Cycling)":
                     current_bg = CARTOON_PALETTE[i % len(CARTOON_PALETTE)]
                 else:
@@ -225,12 +237,13 @@ if st.button("🚀 Generate Video with Badges"):
                 
                 img_clip = (
                     ImageClip(frame_np)
-                    .set_start(i * chunk_duration)
+                    .set_start(current_time)
                     .set_duration(chunk_duration)
                 )
                 video_clips.append(img_clip)
+                current_time += chunk_duration
 
-        with st.spinner("3/3 Rendering final video with badges and music..."):
+        with st.spinner("3/3 Rendering final video with perfect sync..."):
             final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
@@ -243,7 +256,7 @@ if st.button("🚀 Generate Video with Badges"):
                 logger=None
             )
 
-        st.success("🎉 Badge-enhanced cartoon video rendered successfully!")
+        st.success("🎉 Perfectly synchronized video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
