@@ -1,5 +1,6 @@
 import os
 import re
+import math
 import numpy as np
 import streamlit as st
 from gtts import gTTS
@@ -15,7 +16,7 @@ from moviepy.audio.fx.all import audio_loop
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Fully Synchronized, Clean, and Optimized Cartoon Generator!")
+st.write("Upgraded with Programmatic Cartoon Graphics & Dynamic Shapes!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -57,32 +58,50 @@ bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", t
 bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
 
 # Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_Pro")
+video_title = st.text_input("Project Name", "Cartoon_Story_Graphics")
 script_text = st.text_area(
     "Enter Script / Educational Story",
     "Welcome little learners! Today we are exploring numbers, counting stars, discovering cute animals, reading books, and learning bright colors together!",
     height=150,
 )
 
-# Clean Text Badges (Guaranteed crisp rendering with zero square boxes)
-KEYWORD_BADGES = {
-    "number": "[COUNTING TIME]", "count": "[COUNTING TIME]", "one": "[NUMBER ONE]", 
-    "two": "[NUMBER TWO]", "three": "[NUMBER THREE]", "star": "[SHINING STARS]", 
-    "shape": "[FUN SHAPES]", "color": "[BRIGHT COLORS]", "animal": "[CUTE ANIMALS]", 
-    "dog": "[PUPPY TIME]", "cat": "[KITTY TIME]", "book": "[STORY TIME]", 
-    "learn": "[LEARNING ZONE]", "explore": "[ADVENTURE TIME]", "welcome": "[HELLO FRIENDS]", 
-    "happy": "[HAPPY DAY]", "fun": "[FUN & GAMES]", "play": "[PLAYTIME]", 
-    "tree": "[NATURE TIME]", "sun": "[SUNNY DAY]"
-}
+# Helper function to draw a custom cartoon star graphic
+def draw_cartoon_star(draw, center, radius, color):
+    cx, cy = center
+    points = []
+    for i in range(10):
+        r = radius if i % 2 == 0 else radius * 0.4
+        angle = i * math.pi / 5 - math.pi / 2
+        points.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
+    draw.polygon(points, fill=color)
 
-def get_badge_for_text(text):
+# Helper function to draw a custom cartoon shape icon based on text keywords
+def draw_cartoon_graphic(draw, text, center, accent_hex):
+    cx, cy = center
     text_lower = text.lower()
-    for keyword, badge in KEYWORD_BADGES.items():
-        if keyword in text_lower:
-            return badge
-    return "[LEARNING ZONE]"  # Default educational badge
+    
+    if any(k in text_lower for k in ["star", "shine", "bright"]):
+        # Draw a cluster of cartoon stars
+        draw_cartoon_star(draw, (cx, cy), 65, "#FFD700")
+        draw_cartoon_star(draw, (cx - 90, cy - 20), 40, "#FFFFFF")
+        draw_cartoon_star(draw, (cx + 90, cy - 20), 40, "#FFFFFF")
+    elif any(k in text_lower for k in ["number", "count", "one", "two", "three"]):
+        # Draw a bouncy counting badge circle
+        draw.ellipse([cx - 75, cy - 75, cx + 75, cy + 75], fill="#FFFFFF", outline=accent_hex, width=8)
+        # We can also draw inner concentric rings
+        draw.ellipse([cx - 55, cy - 55, cx + 55, cy + 55], outline="#FF4500", width=6)
+    elif any(k in text_lower for k in ["animal", "dog", "cat", "pet"]):
+        # Draw cute animal paw / heart shapes
+        draw.ellipse([cx - 50, cy - 30, cx - 10, cy + 10], fill="#FFFFFF")
+        draw.ellipse([cx + 10, cy - 30, cx + 50, cy + 10], fill="#FFFFFF")
+        draw.ellipse([cx - 30, cy - 60, cx + 30, cy - 10], fill="#FFFFFF")
+        draw.ellipse([cx - 25, cy + 10, cx + 25, cy + 50], fill="#FFFFFF")
+    else:
+        # Default bouncy cartoon educational shapes (overlapping colorful circles)
+        draw.ellipse([cx - 70, cy - 70, cx + 70, cy + 70], fill="#FFFFFF", outline=accent_hex, width=6)
+        draw.ellipse([cx - 30, cy - 30, cx + 30, cy + 30], fill=accent_hex)
 
-# Helper function to generate frames with borders, clean banners, and badges
+# Helper function to generate frames with borders, clean banners, and custom graphics
 def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accent_color_hex, video_title_text):
     w_img, h_img = size
     img = Image.new("RGB", (w_img, h_img), bg_color_hex)
@@ -104,18 +123,15 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     try:
         font = ImageFont.truetype("DejaVuSans.ttf", font_size)
         header_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 0.65))
-        badge_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 0.75))
     except:
         try:
             font = ImageFont.truetype("Arial.ttf", font_size)
             header_font = ImageFont.truetype("Arial.ttf", int(font_size * 0.65))
-            badge_font = ImageFont.truetype("Arial.ttf", int(font_size * 0.75))
         except:
             font = ImageFont.load_default()
             header_font = ImageFont.load_default()
-            badge_font = ImageFont.load_default()
 
-    # Draw clean header title (No emojis to prevent square box rendering bugs)
+    # Draw clean header title
     draw.text(
         (w_img / 2, border_width + (banner_height / 2)),
         video_title_text.upper(),
@@ -125,21 +141,15 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
         align="center"
     )
 
-    # Determine and draw educational badge above the main text
-    matched_badge = get_badge_for_text(text)
+    # Calculate center position for cartoon graphics and text
     body_top = border_width + banner_height
     body_center_y = body_top + ((h_img - body_top - border_width) / 2)
     
-    badge_y = body_center_y - int(font_size * 2.2)
-    draw.text(
-        (w_img / 2, badge_y),
-        matched_badge,
-        fill=accent_color_hex,
-        font=badge_font,
-        anchor="mm",
-        align="center"
-    )
+    # Draw custom cartoon graphic sticker above text
+    graphic_y = body_center_y - int(font_size * 2.5)
+    draw_cartoon_graphic(draw, text, (w_img / 2, graphic_y), accent_color_hex)
 
+    # Word wrapping for main text
     margin = 120
     max_w = w_img - (2 * margin)
     
@@ -160,7 +170,7 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     
     wrapped_text = "\n".join(lines)
     
-    text_y = body_center_y + int(font_size * 0.5)
+    text_y = body_center_y + int(font_size * 0.6)
     draw.multiline_text(
         (w_img / 2, text_y),
         wrapped_text,
@@ -173,7 +183,7 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Professional Video"):
+if st.button("🚀 Generate Cartoon Graphic Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
@@ -203,7 +213,7 @@ if st.button("🚀 Generate Professional Video"):
             else:
                 final_audio = voice_clip
 
-        with st.spinner("2/3 Synthesizing synchronized frames with clean badges..."):
+        with st.spinner("2/3 Synthesizing frames with custom cartoon shapes and animations..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             
             total_words = sum(len(s.split()) for s in sentences)
@@ -242,7 +252,7 @@ if st.button("🚀 Generate Professional Video"):
                 video_clips.append(img_clip)
                 current_time += chunk_duration
 
-        with st.spinner("3/3 Rendering final professional video..."):
+        with st.spinner("3/3 Rendering final cartoon video..."):
             final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
@@ -255,7 +265,7 @@ if st.button("🚀 Generate Professional Video"):
                 logger=None
             )
 
-        st.success("🎉 Professional cartoon video rendered successfully!")
+        st.success("🎉 Cartoon graphic video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
