@@ -15,7 +15,7 @@ from moviepy.audio.fx.all import audio_loop
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Step 4: Enhanced with Automated Multi-Scene Color Shifting!")
+st.write("Step 5: Enhanced with Automated Cartoon Emojis & Dynamic Stickers!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -34,7 +34,6 @@ theme = st.selectbox(
     ["Bright Kids Fun (Multi-Color Cycling)", "Educational Dark (Slate & Gold)", "Custom Colors"]
 )
 
-# Vibrant Cartoon Palette for multi-scene shifting
 CARTOON_PALETTE = ["#1E90FF", "#FFD700", "#32CD32", "#FF69B4", "#9370DB", "#FFA500", "#00CED1"]
 
 if theme == "Bright Kids Fun (Multi-Color Cycling)":
@@ -58,14 +57,29 @@ bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", t
 bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
 
 # Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_Step4")
+video_title = st.text_input("Project Name", "Cartoon_Story_Step5")
 script_text = st.text_area(
     "Enter Script / Educational Story",
-    "Welcome little learners! Today we are exploring fun shapes, vibrant colors, and counting numbers from one to five. Watch how the background changes with every sentence!",
+    "Welcome little learners! Today we are exploring numbers, counting stars, discovering cute animals, reading books, and learning bright colors together!",
     height=150,
 )
 
-# Helper function to generate enhanced visual frames with borders and banners
+# Keyword-to-Emoji mapping for automated sticker generation
+KEYWORD_EMOJIS = {
+    "number": "🔢", "count": "🔢", "one": "1️⃣", "two": "2️⃣", "three": "3️⃣",
+    "star": "⭐", "shape": "🔶", "color": "🎨", "animal": "🐶", "dog": "🐶",
+    "cat": "🐱", "book": "📚", "learn": "🎓", "explore": "🚀", "welcome": "👋",
+    "happy": "😊", "fun": "🎉", "play": "🧸", "tree": "🌳", "sun": "☀️"
+}
+
+def get_emoji_for_text(text):
+    text_lower = text.lower()
+    for keyword, emoji in KEYWORD_EMOJIS.items():
+        if keyword in text_lower:
+            return emoji
+    return "⭐"  # Default kid-friendly sticker
+
+# Helper function to generate frames with borders, banners, and emoji stickers
 def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accent_color_hex, video_title_text):
     w_img, h_img = size
     img = Image.new("RGB", (w_img, h_img), bg_color_hex)
@@ -87,19 +101,36 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     try:
         font = ImageFont.truetype("DejaVuSans.ttf", font_size)
         header_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 0.65))
+        emoji_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 1.5))
     except:
         try:
             font = ImageFont.truetype("Arial.ttf", font_size)
             header_font = ImageFont.truetype("Arial.ttf", int(font_size * 0.65))
+            emoji_font = ImageFont.truetype("Arial.ttf", int(font_size * 1.5))
         except:
             font = ImageFont.load_default()
             header_font = ImageFont.load_default()
+            emoji_font = ImageFont.load_default()
 
     draw.text(
         (w_img / 2, border_width + (banner_height / 2)),
         "📚 " + video_title_text.upper(),
         fill="#FFFFFF",
         font=header_font,
+        anchor="mm",
+        align="center"
+    )
+
+    # Determine and draw automated emoji sticker above the text
+    matched_emoji = get_emoji_for_text(text)
+    body_top = border_width + banner_height
+    body_center_y = body_top + ((h_img - body_top - border_width) / 2)
+    
+    emoji_y = body_center_y - int(font_size * 2.2)
+    draw.text(
+        (w_img / 2, emoji_y),
+        matched_emoji,
+        font=emoji_font,
         anchor="mm",
         align="center"
     )
@@ -124,11 +155,9 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     
     wrapped_text = "\n".join(lines)
     
-    body_top = border_width + banner_height
-    body_center_y = body_top + ((h_img - body_top - border_width) / 2)
-    
+    text_y = body_center_y + int(font_size * 0.8)
     draw.multiline_text(
-        (w_img / 2, body_center_y),
+        (w_img / 2, text_y),
         wrapped_text,
         fill=text_color_hex,
         font=font,
@@ -139,7 +168,7 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Step 4 Video"):
+if st.button("🚀 Generate Step 5 Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
@@ -169,13 +198,12 @@ if st.button("🚀 Generate Step 4 Video"):
             else:
                 final_audio = voice_clip
 
-        with st.spinner("2/3 Synthesizing multi-scene color shifting frames..."):
+        with st.spinner("2/3 Synthesizing animated frames with emojis and shifting colors..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             chunk_duration = video_duration / max(len(sentences), 1)
 
             video_clips = []
             for i, sentence in enumerate(sentences):
-                # Automatically pick a different background color for each sentence if using Kids theme
                 if theme == "Bright Kids Fun (Multi-Color Cycling)":
                     current_bg = CARTOON_PALETTE[i % len(CARTOON_PALETTE)]
                 else:
@@ -198,7 +226,7 @@ if st.button("🚀 Generate Step 4 Video"):
                 )
                 video_clips.append(img_clip)
 
-        with st.spinner("3/3 Rendering final video with dynamic scenes..."):
+        with st.spinner("3/3 Rendering final video with stickers and music..."):
             final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
@@ -211,7 +239,7 @@ if st.button("🚀 Generate Step 4 Video"):
                 logger=None
             )
 
-        st.success("🎉 Multi-scene cartoon video rendered successfully!")
+        st.success("🎉 Emoji-enhanced cartoon video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
