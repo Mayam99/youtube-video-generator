@@ -16,7 +16,7 @@ from moviepy.audio.fx.all import audio_loop
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Step 6: Enhanced with Voice Speed & Accent Controls!")
+st.write("Step 7: Enhanced with Quick Educational Script Templates!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -52,7 +52,7 @@ else:
 
 font_size = st.slider("Text Size", 20, 100, 50)
 
-# Narration Settings (Step 6 Addition)
+# Narration Settings
 st.subheader("🎙️ Voice & Narration Settings")
 col_v1, col_v2 = st.columns(2)
 with col_v1:
@@ -65,11 +65,31 @@ st.subheader("🎵 Audio Settings")
 bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", type=["mp3", "wav"])
 bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
 
-# Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_Voice")
+# Script Templates (Step 7 Addition)
+st.subheader("📝 Script & Content")
+script_template = st.selectbox(
+    "Choose a Quick Script Template", 
+    [
+        "Custom Script (Type Your Own)",
+        "Counting Numbers (1 to 5)",
+        "Fun Shapes & Colors",
+        "Cute Animal Adventure"
+    ]
+)
+
+default_scripts = {
+    "Custom Script (Type Your Own)": "Welcome little learners! Type your custom educational story here.",
+    "Counting Numbers (1 to 5)": "Welcome little learners! Today we are counting numbers together. Number one is a shining star. Number two brings fun shapes. Number three is counting high!",
+    "Fun Shapes & Colors": "Let's explore bright colors and fun shapes! Look at the glowing stars and vibrant color changes. Learning new things is so much fun!",
+    "Cute Animal Adventure": "Today we are discovering cute animals! Look at the happy puppy and playful cat. Animals make wonderful friends."
+}
+
+selected_default_text = default_scripts.get(script_template, default_scripts["Custom Script (Type Your Own)"])
+
+video_title = st.text_input("Project Name", "Cartoon_Story_Templates")
 script_text = st.text_area(
     "Enter Script / Educational Story",
-    "Welcome little learners! Today we are exploring numbers, counting stars, discovering cute animals, reading books, and learning bright colors together!",
+    value=selected_default_text,
     height=150,
 )
 
@@ -182,15 +202,14 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Voice-Controlled Video"):
+if st.button("🚀 Generate Template Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
-        with st.spinner("1/3 Generating customized voiceover and audio..."):
+        with st.spinner("1/3 Generating voiceover and audio..."):
             os.makedirs("output", exist_ok=True)
             audio_path = "output/temp_audio.mp3"
             
-            # Map user choices to gTTS parameters
             is_slow = True if "Slow" in voice_speed_choice else False
             
             tld_map = {
@@ -223,7 +242,7 @@ if st.button("🚀 Generate Voice-Controlled Video"):
             else:
                 final_audio = voice_clip
 
-        with st.spinner("2/3 Synthesizing synchronized frames with voice settings..."):
+        with st.spinner("2/3 Synthesizing frames with templates..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             
             total_words = sum(len(s.split()) for s in sentences)
@@ -262,7 +281,7 @@ if st.button("🚀 Generate Voice-Controlled Video"):
                 video_clips.append(img_clip)
                 current_time += chunk_duration
 
-        with st.spinner("3/3 Rendering final video with voice controls..."):
+        with st.spinner("3/3 Rendering final template video..."):
             final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
@@ -275,7 +294,7 @@ if st.button("🚀 Generate Voice-Controlled Video"):
                 logger=None
             )
 
-        st.success("🎉 Voice-controlled cartoon video rendered successfully!")
+        st.success("🎉 Template-based cartoon video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
