@@ -16,7 +16,7 @@ from moviepy.audio.fx.all import audio_loop
 # Page Configuration
 st.set_page_config(page_title="Cartoon & Educational Video Generator", layout="centered")
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Upgraded with Programmatic Cartoon Graphics & Dynamic Shapes!")
+st.write("Step 6: Enhanced with Voice Speed & Accent Controls!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -52,20 +52,28 @@ else:
 
 font_size = st.slider("Text Size", 20, 100, 50)
 
+# Narration Settings (Step 6 Addition)
+st.subheader("🎙️ Voice & Narration Settings")
+col_v1, col_v2 = st.columns(2)
+with col_v1:
+    voice_speed_choice = st.selectbox("Voice Pacing", ["Normal Speed", "Slow & Clear (Great for Kids)"])
+with col_v2:
+    accent_choice = st.selectbox("Voice Accent", ["American (US)", "British (UK)", "Australian (AU)", "Indian (IN)"])
+
 # Optional Background Music Upload
 st.subheader("🎵 Audio Settings")
 bg_music_file = st.file_uploader("Upload Background Music (Optional MP3/WAV)", type=["mp3", "wav"])
 bg_music_volume = st.slider("Background Music Volume", 0.0, 1.0, 0.1)
 
 # Inputs
-video_title = st.text_input("Project Name", "Cartoon_Story_Graphics")
+video_title = st.text_input("Project Name", "Cartoon_Story_Voice")
 script_text = st.text_area(
     "Enter Script / Educational Story",
     "Welcome little learners! Today we are exploring numbers, counting stars, discovering cute animals, reading books, and learning bright colors together!",
     height=150,
 )
 
-# Helper function to draw a custom cartoon star graphic
+# Helper function to draw cartoon stars
 def draw_cartoon_star(draw, center, radius, color):
     cx, cy = center
     points = []
@@ -75,33 +83,28 @@ def draw_cartoon_star(draw, center, radius, color):
         points.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
     draw.polygon(points, fill=color)
 
-# Helper function to draw a custom cartoon shape icon based on text keywords
+# Helper function to draw custom cartoon graphics
 def draw_cartoon_graphic(draw, text, center, accent_hex):
     cx, cy = center
     text_lower = text.lower()
     
     if any(k in text_lower for k in ["star", "shine", "bright"]):
-        # Draw a cluster of cartoon stars
         draw_cartoon_star(draw, (cx, cy), 65, "#FFD700")
         draw_cartoon_star(draw, (cx - 90, cy - 20), 40, "#FFFFFF")
         draw_cartoon_star(draw, (cx + 90, cy - 20), 40, "#FFFFFF")
     elif any(k in text_lower for k in ["number", "count", "one", "two", "three"]):
-        # Draw a bouncy counting badge circle
         draw.ellipse([cx - 75, cy - 75, cx + 75, cy + 75], fill="#FFFFFF", outline=accent_hex, width=8)
-        # We can also draw inner concentric rings
         draw.ellipse([cx - 55, cy - 55, cx + 55, cy + 55], outline="#FF4500", width=6)
     elif any(k in text_lower for k in ["animal", "dog", "cat", "pet"]):
-        # Draw cute animal paw / heart shapes
         draw.ellipse([cx - 50, cy - 30, cx - 10, cy + 10], fill="#FFFFFF")
         draw.ellipse([cx + 10, cy - 30, cx + 50, cy + 10], fill="#FFFFFF")
         draw.ellipse([cx - 30, cy - 60, cx + 30, cy - 10], fill="#FFFFFF")
         draw.ellipse([cx - 25, cy + 10, cx + 25, cy + 50], fill="#FFFFFF")
     else:
-        # Default bouncy cartoon educational shapes (overlapping colorful circles)
         draw.ellipse([cx - 70, cy - 70, cx + 70, cy + 70], fill="#FFFFFF", outline=accent_hex, width=6)
         draw.ellipse([cx - 30, cy - 30, cx + 30, cy + 30], fill=accent_hex)
 
-# Helper function to generate frames with borders, clean banners, and custom graphics
+# Helper function to generate frames
 def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accent_color_hex, video_title_text):
     w_img, h_img = size
     img = Image.new("RGB", (w_img, h_img), bg_color_hex)
@@ -131,7 +134,6 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
             font = ImageFont.load_default()
             header_font = ImageFont.load_default()
 
-    # Draw clean header title
     draw.text(
         (w_img / 2, border_width + (banner_height / 2)),
         video_title_text.upper(),
@@ -141,15 +143,12 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
         align="center"
     )
 
-    # Calculate center position for cartoon graphics and text
     body_top = border_width + banner_height
     body_center_y = body_top + ((h_img - body_top - border_width) / 2)
     
-    # Draw custom cartoon graphic sticker above text
     graphic_y = body_center_y - int(font_size * 2.5)
     draw_cartoon_graphic(draw, text, (w_img / 2, graphic_y), accent_color_hex)
 
-    # Word wrapping for main text
     margin = 120
     max_w = w_img - (2 * margin)
     
@@ -183,15 +182,26 @@ def create_text_image(text, size, font_size, text_color_hex, bg_color_hex, accen
     return np.array(img)
 
 # Generate Button
-if st.button("🚀 Generate Cartoon Graphic Video"):
+if st.button("🚀 Generate Voice-Controlled Video"):
     if not script_text.strip():
         st.error("Please enter a script first!")
     else:
-        with st.spinner("1/3 Generating voiceover and audio tracks..."):
+        with st.spinner("1/3 Generating customized voiceover and audio..."):
             os.makedirs("output", exist_ok=True)
             audio_path = "output/temp_audio.mp3"
             
-            tts = gTTS(text=script_text, lang='en', slow=False)
+            # Map user choices to gTTS parameters
+            is_slow = True if "Slow" in voice_speed_choice else False
+            
+            tld_map = {
+                "American (US)": "com",
+                "British (UK)": "co.uk",
+                "Australian (AU)": "com.au",
+                "Indian (IN)": "co.in"
+            }
+            selected_tld = tld_map.get(accent_choice, "com")
+            
+            tts = gTTS(text=script_text, lang='en', tld=selected_tld, slow=is_slow)
             tts.save(audio_path)
             
             voice_clip = AudioFileClip(audio_path)
@@ -213,7 +223,7 @@ if st.button("🚀 Generate Cartoon Graphic Video"):
             else:
                 final_audio = voice_clip
 
-        with st.spinner("2/3 Synthesizing frames with custom cartoon shapes and animations..."):
+        with st.spinner("2/3 Synthesizing synchronized frames with voice settings..."):
             sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', script_text) if s.strip()]
             
             total_words = sum(len(s.split()) for s in sentences)
@@ -252,7 +262,7 @@ if st.button("🚀 Generate Cartoon Graphic Video"):
                 video_clips.append(img_clip)
                 current_time += chunk_duration
 
-        with st.spinner("3/3 Rendering final cartoon video..."):
+        with st.spinner("3/3 Rendering final video with voice controls..."):
             final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
             output_file = f"output/{video_title}.mp4"
             
@@ -265,7 +275,7 @@ if st.button("🚀 Generate Cartoon Graphic Video"):
                 logger=None
             )
 
-        st.success("🎉 Cartoon graphic video rendered successfully!")
+        st.success("🎉 Voice-controlled cartoon video rendered successfully!")
         
         with open(output_file, "rb") as file:
             st.download_button(
