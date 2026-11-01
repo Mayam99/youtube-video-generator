@@ -18,7 +18,9 @@ st.set_page_config(
     page_title="Cartoon & Educational Video Generator", layout="centered"
 )
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write("Step 8: Enhanced with Custom Background Image Uploads!")
+st.write(
+    "Step 9: Enhanced with Channel Watermarks & Cinematic Fade Transitions!"
+)
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -78,6 +80,12 @@ else:
 
 font_size = st.slider("Text Size", 20, 100, 50)
 
+# Branding Settings (Step 9 Addition)
+st.subheader("📺 Branding & Watermark")
+watermark_text = st.text_input(
+    "Channel Watermark / Corner Logo", "@LittleLearnersTV"
+)
+
 # Narration Settings
 st.subheader("🎙️ Voice & Narration Settings")
 col_v1, col_v2 = st.columns(2)
@@ -133,7 +141,7 @@ selected_default_text = default_scripts.get(
     script_template, default_scripts["Custom Script (Type Your Own)"]
 )
 
-video_title = st.text_input("Project Name", "Cartoon_Story_ImageBg")
+video_title = st.text_input("Project Name", "Cartoon_Story_Branded")
 script_text = st.text_area(
     "Enter Script / Educational Story",
     value=selected_default_text,
@@ -186,7 +194,7 @@ def draw_cartoon_graphic(draw, text, center, accent_hex):
     draw.ellipse([cx - 30, cy - 30, cx + 30, cy + 30], fill=accent_hex)
 
 
-# Helper function to generate frames with custom background support
+# Helper function to generate frames with watermarks and headers
 def create_text_image(
     text,
     size,
@@ -196,6 +204,7 @@ def create_text_image(
     accent_color_hex,
     video_title_text,
     custom_bg_img=None,
+    watermark="",
 ):
   w_img, h_img = size
 
@@ -227,13 +236,16 @@ def create_text_image(
   try:
     font = ImageFont.truetype("DejaVuSans.ttf", font_size)
     header_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 0.65))
+    watermark_font = ImageFont.truetype("DejaVuSans.ttf", int(font_size * 0.45))
   except:
     try:
       font = ImageFont.truetype("Arial.ttf", font_size)
       header_font = ImageFont.truetype("Arial.ttf", int(font_size * 0.65))
+      watermark_font = ImageFont.truetype("Arial.ttf", int(font_size * 0.45))
     except:
       font = ImageFont.load_default()
       header_font = ImageFont.load_default()
+      watermark_font = ImageFont.load_default()
 
   draw.text(
       (w_img / 2, border_width + (banner_height / 2)),
@@ -243,6 +255,17 @@ def create_text_image(
       anchor="mm",
       align="center",
   )
+
+  # Draw channel watermark in the bottom right corner
+  if watermark.strip():
+    draw.text(
+        (w_img - border_width - 40, h_img - border_width - 40),
+        watermark,
+        fill=text_color_hex,
+        font=watermark_font,
+        anchor="rs",
+        align="right",
+    )
 
   body_top = border_width + banner_height
   body_center_y = body_top + ((h_img - body_top - border_width) / 2)
@@ -284,11 +307,11 @@ def create_text_image(
 
 
 # Generate Button
-if st.button("🚀 Generate Custom Background Video"):
+if st.button("🚀 Generate Branded Video"):
   if not script_text.strip():
     st.error("Please enter a script first!")
   else:
-    with st.spinner("1/3 Processing voiceover and background image..."):
+    with st.spinner("1/3 Processing voiceover and background media..."):
       os.makedirs("output", exist_ok=True)
       audio_path = "output/temp_audio.mp3"
 
@@ -328,7 +351,9 @@ if st.button("🚀 Generate Custom Background Video"):
       else:
         final_audio = voice_clip
 
-    with st.spinner("2/3 Synthesizing frames with custom backdrop..."):
+    with st.spinner(
+        "2/3 Synthesizing frames with watermarks and cinematic fades..."
+    ):
       sentences = [
           s.strip()
           for s in re.split(r"(?<=[.!?]) +", script_text)
@@ -362,17 +387,22 @@ if st.button("🚀 Generate Custom Background Video"):
             accent_color_hex=accent_color,
             video_title_text=video_title,
             custom_bg_img=loaded_bg_img,
+            watermark=watermark_text,
         )
 
+        # Add smooth fade-in and fade-out effects between clips (0.15s each)
+        fade_dur = min(0.15, chunk_duration / 3)
         img_clip = (
             ImageClip(frame_np)
             .set_start(current_time)
             .set_duration(chunk_duration)
+            .fadein(fade_dur)
+            .fadeout(fade_dur)
         )
         video_clips.append(img_clip)
         current_time += chunk_duration
 
-    with st.spinner("3/3 Rendering final custom background video..."):
+    with st.spinner("3/3 Rendering final branded video..."):
       final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
       output_file = f"output/{video_title}.mp4"
 
@@ -385,7 +415,7 @@ if st.button("🚀 Generate Custom Background Video"):
           logger=None,
       )
 
-    st.success("🎉 Custom background video rendered successfully!")
+    st.success("🎉 Branded cartoon video rendered successfully!")
 
     with open(output_file, "rb") as file:
       st.download_button(
