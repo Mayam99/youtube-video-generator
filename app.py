@@ -19,7 +19,7 @@ st.set_page_config(
 )
 st.title("🎨 Kids & Adult Cartoon Creator")
 st.write(
-    "Step 9: Enhanced with Channel Watermarks & Cinematic Fade Transitions!"
+    "Step 10: Enhanced with Multi-Language Translation & Global Voiceovers!"
 )
 
 # Video Format & Purpose Selection
@@ -80,23 +80,35 @@ else:
 
 font_size = st.slider("Text Size", 20, 100, 50)
 
-# Branding Settings (Step 9 Addition)
+# Branding Settings
 st.subheader("📺 Branding & Watermark")
 watermark_text = st.text_input(
     "Channel Watermark / Corner Logo", "@LittleLearnersTV"
 )
 
-# Narration Settings
-st.subheader("🎙️ Voice & Narration Settings")
-col_v1, col_v2 = st.columns(2)
-with col_v1:
-  voice_speed_choice = st.selectbox(
-      "Voice Pacing", ["Normal Speed", "Slow & Clear (Great for Kids)"]
+# Narration & Language Settings (Step 10 Addition)
+st.subheader("🎙️ Voice & Language Settings")
+col_l1, col_l2, col_l3 = st.columns(3)
+with col_l1:
+  language_choice = st.selectbox(
+      "Narration Language",
+      [
+          "English (EN)",
+          "Spanish (ES)",
+          "French (FR)",
+          "German (DE)",
+          "Hindi (HI)",
+          "Portuguese (PT)",
+          "Japanese (JA)",
+      ],
   )
-with col_v2:
+with col_l2:
+  voice_speed_choice = st.selectbox(
+      "Voice Pacing", ["Normal Speed", "Slow & Clear"]
+  )
+with col_l3:
   accent_choice = st.selectbox(
-      "Voice Accent",
-      ["American (US)", "British (UK)", "Australian (AU)", "Indian (IN)"],
+      "English Accent", ["American (US)", "British (UK)", "Australian (AU)"]
   )
 
 # Optional Background Music Upload
@@ -141,7 +153,7 @@ selected_default_text = default_scripts.get(
     script_template, default_scripts["Custom Script (Type Your Own)"]
 )
 
-video_title = st.text_input("Project Name", "Cartoon_Story_Branded")
+video_title = st.text_input("Project Name", "Cartoon_Story_MultiLang")
 script_text = st.text_area(
     "Enter Script / Educational Story",
     value=selected_default_text,
@@ -165,11 +177,14 @@ def draw_cartoon_graphic(draw, text, center, accent_hex):
   cx, cy = center
   text_lower = text.lower()
 
-  if any(k in text_lower for k in ["star", "shine", "bright"]):
+  if any(k in text_lower for k in ["star", "shine", "bright", "estrella", "étoile"]):
     draw_cartoon_star(draw, (cx, cy), 65, "#FFD700")
     draw_cartoon_star(draw, (cx - 90, cy - 20), 40, "#FFFFFF")
     draw_cartoon_star(draw, (cx + 90, cy - 20), 40, "#FFFFFF")
-  elif any(k in text_lower for k in ["number", "count", "one", "two", "three"]):
+  elif any(
+      k in text_lower
+      for k in ["number", "count", "one", "two", "three", "número", "uno"]
+  ):
     draw.ellipse(
         [cx - 75, cy - 75, cx + 75, cy + 75],
         fill="#FFFFFF",
@@ -179,7 +194,7 @@ def draw_cartoon_graphic(draw, text, center, accent_hex):
     draw.ellipse(
         [cx - 55, cy - 55, cx + 55, cy + 55], outline="#FF4500", width=6
     )
-  elif any(k in text_lower for k in ["animal", "dog", "cat", "pet"]):
+  elif any(k in text_lower for k in ["animal", "dog", "cat", "perro", "gato"]):
     draw.ellipse([cx - 50, cy - 30, cx - 10, cy + 10], fill="#FFFFFF")
     draw.ellipse([cx + 10, cy - 30, cx + 50, cy + 10], fill="#FFFFFF")
     draw.ellipse([cx - 30, cy - 60, cx + 30, cy - 10], fill="#FFFFFF")
@@ -194,7 +209,7 @@ def draw_cartoon_graphic(draw, text, center, accent_hex):
     draw.ellipse([cx - 30, cy - 30, cx + 30, cy + 30], fill=accent_hex)
 
 
-# Helper function to generate frames with watermarks and headers
+# Helper function to generate frames
 def create_text_image(
     text,
     size,
@@ -256,7 +271,6 @@ def create_text_image(
       align="center",
   )
 
-  # Draw channel watermark in the bottom right corner
   if watermark.strip():
     draw.text(
         (w_img - border_width - 40, h_img - border_width - 40),
@@ -307,25 +321,37 @@ def create_text_image(
 
 
 # Generate Button
-if st.button("🚀 Generate Branded Video"):
+if st.button("🚀 Generate Multi-Language Video"):
   if not script_text.strip():
     st.error("Please enter a script first!")
   else:
-    with st.spinner("1/3 Processing voiceover and background media..."):
+    with st.spinner("1/3 Generating multi-language voiceover..."):
       os.makedirs("output", exist_ok=True)
       audio_path = "output/temp_audio.mp3"
 
       is_slow = True if "Slow" in voice_speed_choice else False
 
+      lang_map = {
+          "English (EN)": "en",
+          "Spanish (ES)": "es",
+          "French (FR)": "fr",
+          "German (DE)": "de",
+          "Hindi (HI)": "hi",
+          "Portuguese (PT)": "pt",
+          "Japanese (JA)": "ja",
+      }
+      selected_lang = lang_map.get(language_choice, "en")
+
       tld_map = {
           "American (US)": "com",
           "British (UK)": "co.uk",
           "Australian (AU)": "com.au",
-          "Indian (IN)": "co.in",
       }
       selected_tld = tld_map.get(accent_choice, "com")
 
-      tts = gTTS(text=script_text, lang="en", tld=selected_tld, slow=is_slow)
+      tts = gTTS(
+          text=script_text, lang=selected_lang, tld=selected_tld, slow=is_slow
+      )
       tts.save(audio_path)
 
       voice_clip = AudioFileClip(audio_path)
@@ -351,9 +377,7 @@ if st.button("🚀 Generate Branded Video"):
       else:
         final_audio = voice_clip
 
-    with st.spinner(
-        "2/3 Synthesizing frames with watermarks and cinematic fades..."
-    ):
+    with st.spinner("2/3 Synthesizing frames and cinematic fades..."):
       sentences = [
           s.strip()
           for s in re.split(r"(?<=[.!?]) +", script_text)
@@ -390,7 +414,6 @@ if st.button("🚀 Generate Branded Video"):
             watermark=watermark_text,
         )
 
-        # Add smooth fade-in and fade-out effects between clips (0.15s each)
         fade_dur = min(0.15, chunk_duration / 3)
         img_clip = (
             ImageClip(frame_np)
@@ -402,7 +425,7 @@ if st.button("🚀 Generate Branded Video"):
         video_clips.append(img_clip)
         current_time += chunk_duration
 
-    with st.spinner("3/3 Rendering final branded video..."):
+    with st.spinner("3/3 Rendering final multi-language video..."):
       final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
       output_file = f"output/{video_title}.mp4"
 
@@ -415,7 +438,7 @@ if st.button("🚀 Generate Branded Video"):
           logger=None,
       )
 
-    st.success("🎉 Branded cartoon video rendered successfully!")
+    st.success("🎉 Multi-language cartoon video rendered successfully!")
 
     with open(output_file, "rb") as file:
       st.download_button(
