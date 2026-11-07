@@ -86,7 +86,7 @@ watermark_text = st.text_input(
     "Channel Watermark / Corner Logo", "@LittleLearnersTV"
 )
 
-# Narration & Language Settings (Step 10 Addition)
+# Narration & Language Settings
 st.subheader("🎙️ Voice & Language Settings")
 col_l1, col_l2, col_l3 = st.columns(3)
 with col_l1:
@@ -108,7 +108,8 @@ with col_l2:
   )
 with col_l3:
   accent_choice = st.selectbox(
-      "English Accent", ["American (US)", "British (UK)", "Australian (AU)"]
+      "English Accent (Applies to English only)",
+      ["American (US)", "British (UK)", "Australian (AU)"],
   )
 
 # Optional Background Music Upload
@@ -342,12 +343,16 @@ if st.button("🚀 Generate Multi-Language Video"):
       }
       selected_lang = lang_map.get(language_choice, "en")
 
-      tld_map = {
-          "American (US)": "com",
-          "British (UK)": "co.uk",
-          "Australian (AU)": "com.au",
-      }
-      selected_tld = tld_map.get(accent_choice, "com")
+      # Apply accent only when English is selected; default to 'com' for other languages
+      if selected_lang == "en":
+        tld_map = {
+            "American (US)": "com",
+            "British (UK)": "co.uk",
+            "Australian (AU)": "com.au",
+        }
+        selected_tld = tld_map.get(accent_choice, "com")
+      else:
+        selected_tld = "com"
 
       tts = gTTS(
           text=script_text, lang=selected_lang, tld=selected_tld, slow=is_slow
