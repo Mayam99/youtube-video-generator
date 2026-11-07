@@ -18,9 +18,7 @@ st.set_page_config(
     page_title="Cartoon & Educational Video Generator", layout="centered"
 )
 st.title("🎨 Kids & Adult Cartoon Creator")
-st.write(
-    "Step 10: Enhanced with Multi-Language Translation & Global Voiceovers!"
-)
+st.write("Step 11: Enhanced with Educational Quiz & Call-to-Action End Screens!")
 
 # Video Format & Purpose Selection
 format_choice = st.selectbox(
@@ -86,6 +84,14 @@ watermark_text = st.text_input(
     "Channel Watermark / Corner Logo", "@LittleLearnersTV"
 )
 
+# End Screen Options (Step 11 Addition)
+st.subheader("🎯 Outro Settings")
+add_outro = st.checkbox(
+    "Append Educational Quiz & Subscribe Outro",
+    value=True,
+    help="Adds a concluding review slide and a subscribe call-to-action.",
+)
+
 # Narration & Language Settings
 st.subheader("🎙️ Voice & Language Settings")
 col_l1, col_l2, col_l3 = st.columns(3)
@@ -94,10 +100,10 @@ with col_l1:
       "Narration Language",
       [
           "English (EN)",
+          "Hindi / Hinglish (HI)",
           "Spanish (ES)",
           "French (FR)",
           "German (DE)",
-          "Hindi (HI)",
           "Portuguese (PT)",
           "Japanese (JA)",
       ],
@@ -154,7 +160,7 @@ selected_default_text = default_scripts.get(
     script_template, default_scripts["Custom Script (Type Your Own)"]
 )
 
-video_title = st.text_input("Project Name", "Cartoon_Story_MultiLang")
+video_title = st.text_input("Project Name", "Cartoon_Story_Quiz")
 script_text = st.text_area(
     "Enter Script / Educational Story",
     value=selected_default_text,
@@ -178,7 +184,18 @@ def draw_cartoon_graphic(draw, text, center, accent_hex):
   cx, cy = center
   text_lower = text.lower()
 
-  if any(k in text_lower for k in ["star", "shine", "bright", "estrella", "étoile"]):
+  if any(
+      k in text_lower
+      for k in [
+          "star",
+          "shine",
+          "bright",
+          "estrella",
+          "étoile",
+          "subscribe",
+          "like",
+      ]
+  ):
     draw_cartoon_star(draw, (cx, cy), 65, "#FFD700")
     draw_cartoon_star(draw, (cx - 90, cy - 20), 40, "#FFFFFF")
     draw_cartoon_star(draw, (cx + 90, cy - 20), 40, "#FFFFFF")
@@ -195,7 +212,9 @@ def draw_cartoon_graphic(draw, text, center, accent_hex):
     draw.ellipse(
         [cx - 55, cy - 55, cx + 55, cy + 55], outline="#FF4500", width=6
     )
-  elif any(k in text_lower for k in ["animal", "dog", "cat", "perro", "gato"]):
+  elif any(
+      k in text_lower for k in ["animal", "dog", "cat", "perro", "gato", "quiz"]
+  ):
     draw.ellipse([cx - 50, cy - 30, cx - 10, cy + 10], fill="#FFFFFF")
     draw.ellipse([cx + 10, cy - 30, cx + 50, cy + 10], fill="#FFFFFF")
     draw.ellipse([cx - 30, cy - 60, cx + 30, cy - 10], fill="#FFFFFF")
@@ -322,11 +341,11 @@ def create_text_image(
 
 
 # Generate Button
-if st.button("🚀 Generate Multi-Language Video"):
+if st.button("🚀 Generate Quiz Video"):
   if not script_text.strip():
     st.error("Please enter a script first!")
   else:
-    with st.spinner("1/3 Generating multi-language voiceover..."):
+    with st.spinner("1/3 Generating voiceover with quiz outro..."):
       os.makedirs("output", exist_ok=True)
       audio_path = "output/temp_audio.mp3"
 
@@ -334,16 +353,15 @@ if st.button("🚀 Generate Multi-Language Video"):
 
       lang_map = {
           "English (EN)": "en",
+          "Hindi / Hinglish (HI)": "hi",
           "Spanish (ES)": "es",
           "French (FR)": "fr",
           "German (DE)": "de",
-          "Hindi (HI)": "hi",
           "Portuguese (PT)": "pt",
           "Japanese (JA)": "ja",
       }
       selected_lang = lang_map.get(language_choice, "en")
 
-      # Apply accent only when English is selected; default to 'com' for other languages
       if selected_lang == "en":
         tld_map = {
             "American (US)": "com",
@@ -354,8 +372,16 @@ if st.button("🚀 Generate Multi-Language Video"):
       else:
         selected_tld = "com"
 
+      # Append outro script sentences if enabled
+      final_script = script_text.strip()
+      if add_outro:
+        if selected_lang == "hi":
+          final_script += " Quiz time! Aapne aaj kya seekha? Don't forget to like and subscribe for more fun learning videos!"
+        else:
+          final_script += " Quiz time! What did you learn today? Don't forget to like and subscribe for more fun learning videos!"
+
       tts = gTTS(
-          text=script_text, lang=selected_lang, tld=selected_tld, slow=is_slow
+          text=final_script, lang=selected_lang, tld=selected_tld, slow=is_slow
       )
       tts.save(audio_path)
 
@@ -382,10 +408,10 @@ if st.button("🚀 Generate Multi-Language Video"):
       else:
         final_audio = voice_clip
 
-    with st.spinner("2/3 Synthesizing frames and cinematic fades..."):
+    with st.spinner("2/3 Synthesizing frames and quiz slides..."):
       sentences = [
           s.strip()
-          for s in re.split(r"(?<=[.!?]) +", script_text)
+          for s in re.split(r"(?<=[.!?]) +", final_script)
           if s.strip()
       ]
 
@@ -430,7 +456,7 @@ if st.button("🚀 Generate Multi-Language Video"):
         video_clips.append(img_clip)
         current_time += chunk_duration
 
-    with st.spinner("3/3 Rendering final multi-language video..."):
+    with st.spinner("3/3 Rendering final quiz video..."):
       final_clip = CompositeVideoClip(video_clips).set_audio(final_audio)
       output_file = f"output/{video_title}.mp4"
 
@@ -443,7 +469,7 @@ if st.button("🚀 Generate Multi-Language Video"):
           logger=None,
       )
 
-    st.success("🎉 Multi-language cartoon video rendered successfully!")
+    st.success("🎉 Educational quiz video rendered successfully!")
 
     with open(output_file, "rb") as file:
       st.download_button(
